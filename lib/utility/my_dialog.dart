@@ -11,6 +11,18 @@ class MyDialog {
     required this.context,
   });
 
+  Future<void> processDialog() async {
+    showDialog(
+      context: context,
+      builder: (context) => WillPopScope(
+        child: const Center(child:  CircularProgressIndicator(color: Colors.white,)),
+        onWillPop: () async {
+          return false;
+        },
+      ),
+    );
+  }
+
   Future<void> normalDialog({
     required String title,
     required String subTitle,

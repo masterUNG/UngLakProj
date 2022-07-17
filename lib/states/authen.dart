@@ -1,6 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:unglakproj/states/create_account.dart';
+import 'package:unglakproj/states/my_service.dart';
 import 'package:unglakproj/utility/my_constant.dart';
+import 'package:unglakproj/utility/my_dialog.dart';
 import 'package:unglakproj/widgets/show_button.dart';
 import 'package:unglakproj/widgets/show_form.dart';
 import 'package:unglakproj/widgets/show_image.dart';
@@ -16,6 +19,7 @@ class Authen extends StatefulWidget {
 
 class _AuthenState extends State<Authen> {
   bool redEye = true;
+  String? email, password;
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +42,9 @@ class _AuthenState extends State<Authen> {
                       textInputType: TextInputType.emailAddress,
                       hint: 'Email :',
                       iconData: Icons.mail_outline,
-                      changeFunc: (String string) {},
+                      changeFunc: (String string) {
+                        email = string.trim();
+                      },
                     ),
                   ),
                   newCenter(
@@ -52,14 +58,25 @@ class _AuthenState extends State<Authen> {
                       obsecu: redEye,
                       hint: 'Password :',
                       iconData: Icons.lock_outline,
-                      changeFunc: (String string) {},
+                      changeFunc: (String string) {
+                        password = string.trim();
+                      },
                     ),
                   ),
                   newCenter(
                     boxConstraints,
                     ShowButton(
                       label: 'Login',
-                      pressFunc: () {},
+                      pressFunc: () {
+                        if ((email?.isEmpty ?? true) ||
+                            (password?.isEmpty ?? true)) {
+                          MyDialog(context: context).normalDialog(
+                              title: 'Have Space ?',
+                              subTitle: 'Please Fill Every Blank');
+                        } else {
+                          processCheckLogin();
+                        }
+                      },
                     ),
                   ),
                   Row(
@@ -69,7 +86,11 @@ class _AuthenState extends State<Authen> {
                       ShowTextButton(
                         label: ' Create New Account',
                         pressFunc: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => const CreateAccount(),));
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const CreateAccount(),
+                              ));
                         },
                       ),
                     ],
@@ -111,5 +132,30 @@ class _AuthenState extends State<Authen> {
       width: boxConstraints.maxWidth * 0.15,
       child: const ShowImage(),
     );
+  }
+
+  Future<void> processCheckLogin() async {
+    MyDialog(context: context).processDialog();
+    await FirebaseAuth.instance
+        .signInWithEmailAndPassword(email: email!, password: password!)
+        .then((value) {
+      Navigator.pop(context);
+      MyDialog(context: context).normalDialog(
+          label2: 'MyService',
+          pressFunc2: () {
+            Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const MyService(),
+                ),
+                (route) => false);
+          },
+          title: 'Login Success',
+          subTitle: 'Welcome to my App Please Tap MyService');
+    }).catchError((onError) {
+      Navigator.pop(context);
+      MyDialog(context: context)
+          .normalDialog(title: onError.code, subTitle: onError.message);
+    });
   }
 }
